@@ -45,4 +45,25 @@ public class UsersController : ControllerBase
         // Retornando a lista de usuários
         return Ok(usersViewModels); // 200 OK
     }
+
+    [HttpGet("{id}")]
+    public IActionResult GetUserById(int id)
+    {
+        List<User> users = db.Users
+            .Include(x => x.TypeUser)
+            .ToList();
+
+        var user = users.Find(x => x.Id == id);
+        if (user != null)
+        {
+            UserViewModel userViewModel = new UserViewModel(user.Id, user.Name, user.Email, new TypeUserViewModel(user.TypeUserId, user.TypeUser.Name));
+            return Ok(userViewModel);
+        }
+        else
+        {
+            return NotFound();
+        }     
+    }
+    
+    
 }
