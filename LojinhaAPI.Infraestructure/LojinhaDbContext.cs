@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using LojinhaAPI.Domains;
 using Microsoft.EntityFrameworkCore;
 
-namespace LojinhaAPI.Models;
+namespace LojinhaAPI.Infraestructure;
 
 public partial class LojinhaDbContext : DbContext
 {

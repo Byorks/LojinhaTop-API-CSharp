@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace LojinhaAPI.Models;
+namespace LojinhaAPI.Domains;
 
 public partial class User
 {
@@ -16,4 +16,11 @@ public partial class User
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual TypeUser TypeUser { get; set; } = null!;
+
+    public User(string name, string email, long typeUserId)
+    {
+        Name = name;
+        Email = email;
+        TypeUserId = typeUserId;
+    }
 }

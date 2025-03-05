@@ -1,29 +1,67 @@
-﻿using LojinhaAPI.Models;
+﻿using LojinhaAPI.Domains;
+using LojinhaAPI.Infraestructure;
+using LojinhaAPI.Infraestructure.Repositories;
+using LojinhaAPI.Infraestructure.Repositories.Interfaces;
+using LojinhaAPI.Requests;
+using LojinhaAPI.ViewModel;
 using LojinhaAPI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace LojinhaAPI.Controllers;
 
+
+/// <summary>
+/// User Controllers
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class UsersController : ControllerBase
 {
-    private readonly LojinhaDbContext db;
+    private readonly IUserRepository userRepository;
+    private readonly ITypeUserRepository typeUserRepository;
 
-    public UsersController(LojinhaDbContext db)
+    /// <summary>
+    /// Constructor
+    /// </summary
+    public UsersController(IUserRepository userRepository, ITypeUserRepository typeUserRepository)
     {
-        // Injecao de dependencia
-        this.db = db;
+        this.userRepository = userRepository;
+        this.typeUserRepository = typeUserRepository;
     }
 
-    [HttpGet]
-    public IActionResult GetAllUsers()
+    /// <summary>
+    /// Get User by Id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
     {
-        List<User> users = db.Users
-            .Include(x => x.TypeUser)
-            .ToList();
-        
+        User? user = await userRepository
+            .GetByIdAsync(id, cancellationToken);
+
+        if (user == null)
+            return NotFound("Usuário náo encontrado.");
+
+        TypeUserViewModel typeUserViewModel = new(user.TypeUserId, user.TypeUser.Name);
+        UserViewModel userViewModel = new(user.Id, user.Name, user.Email, typeUserViewModel);
+
+        return Ok(userViewModel);
+    }
+
+    /// <summary>
+    /// Get All Users
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken)
+    {
+        List<User> users = await userRepository
+            .ListAllAsync(cancellationToken);
+
         // Criando uma lista de UserViewModel
         List<UserViewModel> usersViewModels = new List<UserViewModel>();
 
@@ -41,29 +79,56 @@ public class UsersController : ControllerBase
         //                                         new TypeUserViewModel(x.TypeUserId, x.TypeUser.Name)))
         //                                        .ToList();
 
-        
+
         // Retornando a lista de usuários
         return Ok(usersViewModels); // 200 OK
     }
 
-    [HttpGet("{id}")]
-    public IActionResult GetUserById(int id)
+    /// <summary>
+    /// Create User
+    /// </summary>
+    /// <param name="user"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Return created User Id</returns>
+    /// <returns>Return created User Id</returns>
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] UserRequest user, CancellationToken cancellationToken)
     {
-        List<User> users = db.Users
-            .Include(x => x.TypeUser)
-            .ToList();
+        // Validação do usuário
+        if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
+            return BadRequest($"Usuário com email {user.Email} já existe no sistema");
 
-        var user = users.Find(x => x.Id == id);
-        if (user != null)
-        {
-            UserViewModel userViewModel = new UserViewModel(user.Id, user.Name, user.Email, new TypeUserViewModel(user.TypeUserId, user.TypeUser.Name));
-            return Ok(userViewModel);
-        }
-        else
-        {
-            return NotFound();
-        }     
+        if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken));
+
+        User newUser = new User(user.Name, user.Email, user.TypeUserId);
+
+        User userCreated = await userRepository.CreateAsync(newUser, cancellationToken);
+
+        return Ok(new IdViewModel(userCreated.Id));
     }
+    
+
+    // Tentativa de criar endpoint que retorna usuario por id
+
+    //[HttpGet("{id}")]
+    //public IActionResult GetUserById(int id)
+    //{
+    //    List<User> users = userRepository.Users
+    //        .Include(x => x.TypeUser)
+    //        .ToList();
+
+    //    var user = users.Find(x => x.Id == id);
+
+    //    if (user != null)
+    //    {
+    //        UserViewModel userViewModel = new UserViewModel(user.Id, user.Name, user.Email, new TypeUserViewModel(user.TypeUserId, user.TypeUser.Name));
+    //        return Ok(userViewModel);
+    //    }
+    //    else
+    //    {
+    //        return NotFound();
+    //    }     
+    //}
     
     
 }

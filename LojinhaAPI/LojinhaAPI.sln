@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojinhaAPI", "LojinhaAPI.csproj", "{68963CE2-CF1D-415F-BD25-2BC29D5BA98D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LojinhaAPI", "LojinhaAPI.csproj", "{68963CE2-CF1D-415F-BD25-2BC29D5BA98D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojinhaAPI.Domains", "..\LojinhaAPI.Domains\LojinhaAPI.Domains.csproj", "{354D62A5-874F-4343-8FBA-712856E19655}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojinhaAPI.Infraestructure", "..\LojinhaAPI.Infraestructure\LojinhaAPI.Infraestructure.csproj", "{A4C48128-4366-404E-8589-2A02D99252DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{68963CE2-CF1D-415F-BD25-2BC29D5BA98D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68963CE2-CF1D-415F-BD25-2BC29D5BA98D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68963CE2-CF1D-415F-BD25-2BC29D5BA98D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{354D62A5-874F-4343-8FBA-712856E19655}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{354D62A5-874F-4343-8FBA-712856E19655}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{354D62A5-874F-4343-8FBA-712856E19655}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{354D62A5-874F-4343-8FBA-712856E19655}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4C48128-4366-404E-8589-2A02D99252DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4C48128-4366-404E-8589-2A02D99252DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4C48128-4366-404E-8589-2A02D99252DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4C48128-4366-404E-8589-2A02D99252DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace LojinhaAPI.Models;
+namespace LojinhaAPI.Domains;
 
 public partial class TypeUser
 {

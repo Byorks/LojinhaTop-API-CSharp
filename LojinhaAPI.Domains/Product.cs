@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace LojinhaAPI.Models;
+namespace LojinhaAPI.Domains;
 
-public partial class Order
+public partial class Product
 {
     public long Id { get; set; }
 
-    public long UserId { get; set; }
+    public string Name { get; set; } = null!;
 
     public virtual ICollection<OrderProduct> OrderProducts { get; set; } = new List<OrderProduct>();
-
-    public virtual User User { get; set; } = null!;
 }
