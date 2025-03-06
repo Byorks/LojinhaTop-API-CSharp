@@ -23,19 +23,45 @@ public class UserRepository : IUserRepository
         return newUser.Entity;
     }
 
-    public void DeleteAsync(User user, CancellationToken cancellationToken)
+    public async Task<User?> DeleteAsync(long id, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        User? user = await db.Users
+               .Include(x => x.TypeUser)
+               .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        var userRemoved = db.Users.Remove(user);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return userRemoved.Entity;
+       
     }
 
+    //public async Task<User?> GetByIdAsync(long id, CancellationToken cancellationToken)
+    //{
+    //    // ? Permite a classe ser nullable
+    //    User? user = await db.Users
+    //         .Include(x => x.TypeUser)
+    //         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    //    return user;
+    //}
+
+    // Na mão
     public async Task<User?> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
-        // ? Permite a classe ser nullable
-        User? user = await db.Users
+        List<User> users = await db.Users
              .Include(x => x.TypeUser)
-             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+             .ToListAsync(cancellationToken);
 
-        return user;
+        for (int i = 0; i < users.Count; i++)
+        {
+            if (users[i].Id == id)
+            {   
+                return users[i];
+            }
+        }
+        return null;
     }
 
     public async Task<List<User>> ListAllAsync(CancellationToken cancellationToken)

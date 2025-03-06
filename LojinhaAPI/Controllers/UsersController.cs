@@ -1,12 +1,9 @@
 ﻿using LojinhaAPI.Domains;
-using LojinhaAPI.Infraestructure;
-using LojinhaAPI.Infraestructure.Repositories;
 using LojinhaAPI.Infraestructure.Repositories.Interfaces;
 using LojinhaAPI.Requests;
 using LojinhaAPI.ViewModel;
 using LojinhaAPI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LojinhaAPI.Controllers;
 
@@ -43,7 +40,7 @@ public class UsersController : ControllerBase
             .GetByIdAsync(id, cancellationToken);
 
         if (user == null)
-            return NotFound("Usuário náo encontrado.");
+            return NotFound("Usuário não encontrado.");
 
         TypeUserViewModel typeUserViewModel = new(user.TypeUserId, user.TypeUser.Name);
         UserViewModel userViewModel = new(user.Id, user.Name, user.Email, typeUserViewModel);
@@ -90,7 +87,6 @@ public class UsersController : ControllerBase
     /// <param name="user"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>Return created User Id</returns>
-    /// <returns>Return created User Id</returns>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] UserRequest user, CancellationToken cancellationToken)
     {
@@ -98,7 +94,7 @@ public class UsersController : ControllerBase
         if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
             return BadRequest($"Usuário com email {user.Email} já existe no sistema");
 
-        if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken));
+        if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken)) ;
 
         User newUser = new User(user.Name, user.Email, user.TypeUserId);
 
@@ -106,10 +102,32 @@ public class UsersController : ControllerBase
 
         return Ok(new IdViewModel(userCreated.Id));
     }
-    
 
+
+
+    /// <summary>
+    /// Delete user by Id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns> Name of deleted user </returns>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete([FromRoute] long id, CancellationToken cancellationToken)
+    {
+        User? user = await userRepository.DeleteAsync(id, cancellationToken);
+
+        if (user == null)
+            return BadRequest("Usuário não encontrado");
+        
+        User deletedUser = new User(user.Name,user.Email, user.TypeUserId);
+
+        return Ok( new UserNameViewModel(deletedUser.Name));
+
+    }
+
+
+    #region Minhas Tentativas
     // Tentativa de criar endpoint que retorna usuario por id
-
     //[HttpGet("{id}")]
     //public IActionResult GetUserById(int id)
     //{
@@ -129,6 +147,6 @@ public class UsersController : ControllerBase
     //        return NotFound();
     //    }     
     //}
-    
-    
+    #endregion
+
 }
