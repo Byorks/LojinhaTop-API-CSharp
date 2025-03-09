@@ -2,6 +2,7 @@
 using LojinhaAPI.Infraestructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace LojinhaAPI.Infraestructure.Repositories;
 
 public class UserRepository : IUserRepository
@@ -73,12 +74,27 @@ public class UserRepository : IUserRepository
         return users;
     }
 
-    public Task<User> UpdateAsync(User user, CancellationToken cancellationToken)
+    public async Task<User> UpdateAsync(long id, string name, string email, long typeUserId, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        User? userUpdate = await db.Users
+            .Include(x => x.TypeUser)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        userUpdate!.Name = name;    
+        userUpdate.Email = email;
+        userUpdate.TypeUserId = typeUserId;
+
+        db.Users.Update(userUpdate);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return userUpdate;
     }
 
     public async Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken)
-    => await db.Users.AnyAsync(x => x.Email.Contains(email), cancellationToken);    
+    => await db.Users.AnyAsync(x => x.Email.Contains(email), cancellationToken);
+
+    public async Task<bool> IdExistsAsync(long id, CancellationToken cancellationToken)
+    => await db.Users.AnyAsync(x => x.Id == id, cancellationToken);
 }
 

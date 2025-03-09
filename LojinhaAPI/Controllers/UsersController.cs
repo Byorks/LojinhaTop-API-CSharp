@@ -20,7 +20,7 @@ public class UsersController : ControllerBase
 
     /// <summary>
     /// Constructor
-    /// </summary
+    /// </summary>
     public UsersController(IUserRepository userRepository, ITypeUserRepository typeUserRepository)
     {
         this.userRepository = userRepository;
@@ -30,9 +30,9 @@ public class UsersController : ControllerBase
     /// <summary>
     /// Get User by Id
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="id">User Id</param>
+    /// <param name="cancellationToken">Cancellation Token</param>
+    /// <returns>Return an user by id</returns>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
     {
@@ -51,8 +51,6 @@ public class UsersController : ControllerBase
     /// <summary>
     /// Get All Users
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     [HttpGet]
     public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken)
     {
@@ -86,7 +84,7 @@ public class UsersController : ControllerBase
     /// </summary>
     /// <param name="user"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns>Return created User Id</returns>
+    /// <returns>Return id of User created</returns>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] UserRequest user, CancellationToken cancellationToken)
     {
@@ -94,7 +92,8 @@ public class UsersController : ControllerBase
         if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
             return BadRequest($"Usuário com email {user.Email} já existe no sistema");
 
-        if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken)) ;
+        if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken))
+            return BadRequest($"Tipo de usuário inválido.");
 
         User newUser = new User(user.Name, user.Email, user.TypeUserId);
 
@@ -118,11 +117,45 @@ public class UsersController : ControllerBase
 
         if (user == null)
             return BadRequest("Usuário não encontrado");
-        
-        User deletedUser = new User(user.Name,user.Email, user.TypeUserId);
 
-        return Ok( new UserNameViewModel(deletedUser.Name));
+        User deletedUser = new User(user.Name, user.Email, user.TypeUserId);
 
+        return Ok(new UserNameViewModel(deletedUser.Name));
+
+    }
+
+    /// <summary>
+    /// Update User
+    /// </summary>
+    /// <param name="user"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Updated User</returns>
+    [HttpPut]
+    public async Task<IActionResult> Update([FromBody] UpdateUserRequest user, CancellationToken cancellationToken)
+    {
+        // Precisa ver se todas as entradas do update sao validas
+        // Id existe?
+        if (!await userRepository.IdExistsAsync(user.Id, cancellationToken))
+            return NotFound("Id inválido");
+
+        // O email é valido?
+
+
+        // Alguém já possui o email? Mas e se for o mesmo? Tenho que me preocupar com isso?
+        if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
+            return BadRequest($"Usuário com email {user.Email} já existe no sistema");
+
+        // O TypeUser é válido
+        if (!await typeUserRepository.TypeUserExistsAsync(user.typeUserId, cancellationToken))
+            return NotFound("Tipo de úsuário não existe no sistema.");
+
+        // Se existe nós atualizamos com as informações do corpo
+        User userUpdate = await userRepository.UpdateAsync(user.Id, user.Name, user.Email, user.typeUserId, cancellationToken);
+
+        UserViewModel updatedUser = new ( userUpdate.Id, userUpdate.Name, userUpdate.Email, new(userUpdate.TypeUser.Id, userUpdate.TypeUser.Name));
+
+        // Returna ok se estiver dado certo
+        return Ok(updatedUser);
     }
 
 

@@ -14,11 +14,13 @@ public class TypeUserRepository : ITypeUserRepository
     }
 
     // Exercicio : Implementar os metodos abaixo
-    public Task<List<TypeUser>> ListAllAsync(CancellationToken cancellationToken)
+    public async Task<List<TypeUser>> ListAllAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        List<TypeUser> typeUsers = await db.TypeUsers.ToListAsync(cancellationToken);
+
+        return (typeUsers);
     }
 
     public async Task<bool> TypeUserExistsAsync(long id, CancellationToken cancellationToken)
-    => await db.Users.AnyAsync(x => x.Id == id, cancellationToken);
+    => await db.Users.AnyAsync(x => x.TypeUserId == id, cancellationToken);
 }
