@@ -24,18 +24,11 @@ public class UserRepository : IUserRepository
         return newUser.Entity;
     }
 
-    public async Task<User?> DeleteAsync(long id, CancellationToken cancellationToken)
+    public async Task DeleteAsync(User user, CancellationToken cancellationToken)
     {
-        User? user = await db.Users
-               .Include(x => x.TypeUser)
-               .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-        var userRemoved = db.Users.Remove(user);
+        db.Users.Remove(user);
 
         await db.SaveChangesAsync(cancellationToken);
-
-        return userRemoved.Entity;
-       
     }
 
     //public async Task<User?> GetByIdAsync(long id, CancellationToken cancellationToken)
@@ -74,16 +67,8 @@ public class UserRepository : IUserRepository
         return users;
     }
 
-    public async Task<User> UpdateAsync(long id, string name, string email, long typeUserId, CancellationToken cancellationToken)
+    public async Task<User> UpdateAsync(User userUpdate, CancellationToken cancellationToken)
     {
-        User? userUpdate = await db.Users
-            .Include(x => x.TypeUser)
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-        userUpdate!.Name = name;    
-        userUpdate.Email = email;
-        userUpdate.TypeUserId = typeUserId;
-
         db.Users.Update(userUpdate);
 
         await db.SaveChangesAsync(cancellationToken);

@@ -113,15 +113,15 @@ public class UsersController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete([FromRoute] long id, CancellationToken cancellationToken)
     {
-        User? user = await userRepository.DeleteAsync(id, cancellationToken);
+        User? user = await userRepository.GetByIdAsync(id, cancellationToken);
 
         if (user == null)
             return BadRequest("Usuário não encontrado");
 
-        User deletedUser = new User(user.Name, user.Email, user.TypeUserId);
+        await userRepository.DeleteAsync(user, cancellationToken);
 
-        return Ok(new UserNameViewModel(deletedUser.Name));
-
+        // Return desnecessário, sempre analisar se o que estamos retornando faz sentido
+        return Ok("Usuário deletado");
     }
 
     /// <summary>
@@ -133,25 +133,43 @@ public class UsersController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> Update([FromBody] UpdateUserRequest user, CancellationToken cancellationToken)
     {
+
+        // Feedback
+        // Diogo mencionou o fato de uma repetição de código estar acontecendo na userRepository
+        // Outro ponto é a consulta ao banco repetidas vezes
+        // Vamos resolver isso >:D
+
+
+        // Em vez de eu verificar se existe o Id e depois pegar o usuário, já vamos tentar pegar ele com o método já criado
+        User? userToBeUpdated = await userRepository.GetByIdAsync(user.Id, cancellationToken);
+
+
         // Precisa ver se todas as entradas do update sao validas
         // Id existe?
-        if (!await userRepository.IdExistsAsync(user.Id, cancellationToken))
+        if (userToBeUpdated == null)
+            // Atenção ao retorno ao front, sempre tentar específicar o motivo do erro - nesse caso "Usuário não encontrado" encaixaria melhor
             return NotFound("Id inválido");
 
         // O email é valido?
-
-
-        // Alguém já possui o email? Mas e se for o mesmo? Tenho que me preocupar com isso?
-        if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
-            return BadRequest($"Usuário com email {user.Email} já existe no sistema");
+        if( userToBeUpdated.Email != user.Email)
+        { 
+            if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
+                return BadRequest($"Usuário com email {user.Email} já existe no sistema");
+        }
 
         // O TypeUser é válido
-        if (!await typeUserRepository.TypeUserExistsAsync(user.typeUserId, cancellationToken))
+        if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken))
             return NotFound("Tipo de úsuário não existe no sistema.");
 
-        // Se existe nós atualizamos com as informações do corpo
-        User userUpdate = await userRepository.UpdateAsync(user.Id, user.Name, user.Email, user.typeUserId, cancellationToken);
+        // Atualiza
+        userToBeUpdated.Name = user.Name;
+        userToBeUpdated.Email = user.Email;
+        userToBeUpdated.TypeUserId = user.TypeUserId;
 
+        // Se existe nós atualizamos com as informações do corpo
+        User userUpdate = await userRepository.UpdateAsync(userToBeUpdated, cancellationToken);
+
+        // Ver necessidade do uso do retorno
         UserViewModel updatedUser = new ( userUpdate.Id, userUpdate.Name, userUpdate.Email, new(userUpdate.TypeUser.Id, userUpdate.TypeUser.Name));
 
         // Returna ok se estiver dado certo

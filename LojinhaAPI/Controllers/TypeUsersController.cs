@@ -33,15 +33,13 @@ public class TypeUsersController : ControllerBase
     {
         List<TypeUser> typeUsers = await typeUserRepository.ListAllAsync(cancellationToken);
 
-        //List<TypeUserViewModel> typeUsersView = typeUsers.Select( x => new TypeUserViewModel(x.Id, x.Name));
+        //List<TypeUserViewModel> typeUsersView = typeUsers.Select(x => new TypeUserViewModel(x.Id, x.Name)).ToList();
 
         List<TypeUserViewModel> typeUsersView = new List<TypeUserViewModel>();
 
         foreach (TypeUser typeUser in typeUsers)
         {
             TypeUserViewModel typeUserViewModel = new (typeUser.Id, typeUser.Name);
-
-
             typeUsersView.Add(typeUserViewModel);
         }
         return Ok(typeUsersView);
