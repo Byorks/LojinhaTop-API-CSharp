@@ -1,6 +1,8 @@
 using LojinhaAPI.Infraestructure;
 using LojinhaAPI.Infraestructure.Repositories;
 using LojinhaAPI.Infraestructure.Repositories.Interfaces;
+using LojinhaAPI.Services;
+using LojinhaAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -27,6 +29,9 @@ builder.Services.AddSwaggerGen(options =>
 // A partir disso, é possível acessar a implementação do repositório a partir da interface
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITypeUserRepository, TypeUserRepository>();
+
+// Services
+builder.Services.AddScoped<IUserServices, UserServices>();
 
 // Configuração de Banco de Dados
 builder.Services.AddDbContext<LojinhaDbContext>(options =>

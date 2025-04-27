@@ -1,9 +1,11 @@
 ﻿using LojinhaAPI.Domains;
 using LojinhaAPI.Infraestructure.Repositories.Interfaces;
 using LojinhaAPI.Requests;
+using LojinhaAPI.Services.Interfaces;
 using LojinhaAPI.ViewModel;
 using LojinhaAPI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace LojinhaAPI.Controllers;
 
@@ -17,14 +19,16 @@ public class UsersController : ControllerBase
 {
     private readonly IUserRepository userRepository;
     private readonly ITypeUserRepository typeUserRepository;
+    private readonly IUserServices userServices;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public UsersController(IUserRepository userRepository, ITypeUserRepository typeUserRepository)
+    public UsersController(IUserRepository userRepository, ITypeUserRepository typeUserRepository, IUserServices userServices)
     {
         this.userRepository = userRepository;
         this.typeUserRepository = typeUserRepository;
+        this.userServices = userServices;
     }
 
     /// <summary>
@@ -36,16 +40,12 @@ public class UsersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById([FromRoute] long id, CancellationToken cancellationToken)
     {
-        User? user = await userRepository
-            .GetByIdAsync(id, cancellationToken);
+        var result = await userServices.GetById(id, cancellationToken);
 
-        if (user == null)
-            return NotFound("Usuário não encontrado.");
+        if (result.Error != null)
+            return StatusCode((int)result.Error.StatusCode, result.Error.Message);
 
-        TypeUserViewModel typeUserViewModel = new(user.TypeUserId, user.TypeUser.Name);
-        UserViewModel userViewModel = new(user.Id, user.Name, user.Email, typeUserViewModel);
-
-        return Ok(userViewModel);
+        return Ok(result.ResultObject);
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public class UsersController : ControllerBase
 
 
     /// <summary>
-    /// Delete user by Id
+    /// Delete an User
     /// </summary>
     /// <param name="id"></param>
     /// <param name="cancellationToken"></param>
@@ -124,58 +124,35 @@ public class UsersController : ControllerBase
         return Ok("Usuário deletado");
     }
 
+
     /// <summary>
-    /// Update User
+    /// Update an User
     /// </summary>
-    /// <param name="user"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>Updated User</returns>
-    [HttpPut]
-    public async Task<IActionResult> Update([FromBody] UpdateUserRequest user, CancellationToken cancellationToken)
+    /// <returns></returns>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser([FromBody] UserRequest userRequest ,long id, CancellationToken cancellationToken)
     {
+        User? user = await userRepository.GetByIdAsync (id, cancellationToken);
 
-        // Feedback
-        // Diogo mencionou o fato de uma repetição de código estar acontecendo na userRepository
-        // Outro ponto é a consulta ao banco repetidas vezes
-        // Vamos resolver isso >:D
+        #region Validações
+        if (user == null)
+            return NotFound("Ùsuário não encontrado");
 
+        // Validação do usuário
+        if (user.Email != userRequest.Email)
+            if (await userRepository.EmailExistsAsync(userRequest.Email, cancellationToken))
+                return BadRequest($"Usuário com email {userRequest.Email} já existe no sistema");
 
-        // Em vez de eu verificar se existe o Id e depois pegar o usuário, já vamos tentar pegar ele com o método já criado
-        User? userToBeUpdated = await userRepository.GetByIdAsync(user.Id, cancellationToken);
+        if (!await typeUserRepository.TypeUserExistsAsync(userRequest.TypeUserId, cancellationToken))
+            return BadRequest($"Tipo de usuário inválido.");
+        #endregion
 
+        user.Update(userRequest.Name, userRequest.Email, userRequest.TypeUserId);
 
-        // Precisa ver se todas as entradas do update sao validas
-        // Id existe?
-        if (userToBeUpdated == null)
-            // Atenção ao retorno ao front, sempre tentar específicar o motivo do erro - nesse caso "Usuário não encontrado" encaixaria melhor
-            return NotFound("Id inválido");
+        await userRepository.UpdateAsync(user, cancellationToken);
 
-        // O email é valido?
-        if( userToBeUpdated.Email != user.Email)
-        { 
-            if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
-                return BadRequest($"Usuário com email {user.Email} já existe no sistema");
-        }
-
-        // O TypeUser é válido
-        if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken))
-            return NotFound("Tipo de úsuário não existe no sistema.");
-
-        // Atualiza
-        userToBeUpdated.Name = user.Name;
-        userToBeUpdated.Email = user.Email;
-        userToBeUpdated.TypeUserId = user.TypeUserId;
-
-        // Se existe nós atualizamos com as informações do corpo
-        User userUpdate = await userRepository.UpdateAsync(userToBeUpdated, cancellationToken);
-
-        // Ver necessidade do uso do retorno
-        UserViewModel updatedUser = new ( userUpdate.Id, userUpdate.Name, userUpdate.Email, new(userUpdate.TypeUser.Id, userUpdate.TypeUser.Name));
-
-        // Returna ok se estiver dado certo
-        return Ok(updatedUser);
+        return Ok("Usuãrio atualizado com sucesso");
     }
-
 
     #region Minhas Tentativas
     // Tentativa de criar endpoint que retorna usuario por id
@@ -198,6 +175,81 @@ public class UsersController : ControllerBase
     //        return NotFound();
     //    }     
     //}
+
+
+    ///// <summary>
+    ///// Update User
+    ///// </summary>
+    ///// <param name="user"></param>
+    ///// <param name="cancellationToken"></param>
+    ///// <returns>Updated User</returns>
+    //[HttpPut]
+    //public async Task<IActionResult> Update([FromBody] UpdateUserRequest user, CancellationToken cancellationToken)
+    //{
+
+    //    // Feedback
+    //    // Diogo mencionou o fato de uma repetição de código estar acontecendo na userRepository
+    //    // Outro ponto é a consulta ao banco repetidas vezes
+    //    // Vamos resolver isso >:D
+
+
+    //    // Em vez de eu verificar se existe o Id e depois pegar o usuário, já vamos tentar pegar ele com o método já criado
+    //    User? userToBeUpdated = await userRepository.GetByIdAsync(user.Id, cancellationToken);
+
+
+    //    // Precisa ver se todas as entradas do update sao validas
+    //    // Id existe?
+    //    if (userToBeUpdated == null)
+    //        // Atenção ao retorno ao front, sempre tentar específicar o motivo do erro - nesse caso "Usuário não encontrado" encaixaria melhor
+    //        return NotFound("Id inválido");
+
+    //    // O email é valido?
+    //    if( userToBeUpdated.Email != user.Email)
+    //    { 
+    //        if (await userRepository.EmailExistsAsync(user.Email, cancellationToken))
+    //            return BadRequest($"Usuário com email {user.Email} já existe no sistema");
+    //    }
+
+    //    // O TypeUser é válido
+    //    if (!await typeUserRepository.TypeUserExistsAsync(user.TypeUserId, cancellationToken))
+    //        return NotFound("Tipo de úsuário não existe no sistema.");
+
+    //    // Atualiza
+    //    userToBeUpdated.Name = user.Name;
+    //    userToBeUpdated.Email = user.Email;
+    //    userToBeUpdated.TypeUserId = user.TypeUserId;
+
+    //    // Se existe nós atualizamos com as informações do corpo
+    //    User userUpdate = await userRepository.UpdateAsync(userToBeUpdated, cancellationToken);
+
+    //    // Ver necessidade do uso do retorno
+    //    UserViewModel updatedUser = new ( userUpdate.Id, userUpdate.Name, userUpdate.Email, new(userUpdate.TypeUser.Id, userUpdate.TypeUser.Name));
+
+    //    // Returna ok se estiver dado certo
+    //    return Ok(updatedUser);
+    //}
+
+
+    ///// <summary>
+    ///// Delete user by Id
+    ///// </summary>
+    ///// <param name="id"></param>
+    ///// <param name="cancellationToken"></param>
+    ///// <returns> Name of deleted user </returns>
+    //[HttpDelete("{id}")]
+    //public async Task<IActionResult> Delete([FromRoute] long id, CancellationToken cancellationToken)
+    //{
+    //    User? user = await userRepository.GetByIdAsync(id, cancellationToken);
+
+    //    if (user == null)
+    //        return BadRequest("Usuário não encontrado");
+
+    //    await userRepository.DeleteAsync(user, cancellationToken);
+
+    //    // Return desnecessário, sempre analisar se o que estamos retornando faz sentido
+    //    return Ok("Usuário deletado");
+    //}
+
     #endregion
 
 }

@@ -67,13 +67,10 @@ public class UserRepository : IUserRepository
         return users;
     }
 
-    public async Task<User> UpdateAsync(User userUpdate, CancellationToken cancellationToken)
+    public async Task UpdateAsync(User userUpdate, CancellationToken cancellationToken)
     {
         db.Users.Update(userUpdate);
-
         await db.SaveChangesAsync(cancellationToken);
-
-        return userUpdate;
     }
 
     public async Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken)

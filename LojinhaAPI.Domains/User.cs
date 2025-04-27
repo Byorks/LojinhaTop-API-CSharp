@@ -23,4 +23,11 @@ public partial class User
         Email = email;
         TypeUserId = typeUserId;
     }
+
+    public void  Update(string name, string email, long typeUserId)
+    {
+        Name = name;
+        Email = email;
+        TypeUserId = typeUserId;
+    }
 }
